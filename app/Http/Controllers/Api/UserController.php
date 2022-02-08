@@ -3,113 +3,62 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Interfaces\UserInterface;
+use App\Repositories\UserRepository;
 use App\User;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
-{
-    /**
-     * @var bool
-     */
-    public $loginAfterSignUp = true;
+{    
+    private UserInterface $userRepository;
 
-    /**
-     * user login
-     */
-    public function login(Request $request)
+    public function __construct(UserInterface $userRepository) 
     {
-        $input = $request->only('email', 'password');
-        $token = null;
+        $this->userRepository = $userRepository;
+    }
+   
 
-        if (!$token = JWTAuth::attempt($input)) {
+    /**
+     * get all user
+    */
+    public function allUser ()
+    {
+        $allUsers = $this->userRepository->getAllUsers();
+
+        if ($allUsers->count() > 0) {
             return response()->json([
-                'success' => false,
-                'message' => 'Invalid Email or Password',
-            ], 401);
+                'success'   =>  true,
+                'data'      => $allUsers,
+            ]);
         }
 
-        $user = JWTAuth::user();
+        return response()->json([
+            'success'   => false,
+            'data'      => [],
+            'message'   => 'Sorry, Data not found !!'
+        ]);
+    }
 
+    /**
+     * show user detials
+    */
+    public function show (Request $request)
+    {
+        $userId = $request->route('id');
+
+        $user = $this->userRepository->getUserById($userId);
+        
+        if (!$user) {
+            return response()->json([
+                'success'   => false,
+                'user'      => [],
+                'message'   => 'Sorry, Data not found !!'
+            ]);
+        }
+        
         return response()->json([
             'success'   => true,
-            'user'      => $user,
-            'token'     => $token,
+            'data'      => $user
         ]);
-    }
-
-    /**
-     * user logout
-     */
-    public function logout(Request $request)
-    {  
-        $this->validate($request, [
-            'token' => 'required'
-        ]);
-
-        try {
-
-            JWTAuth::invalidate($request->token);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'User logged out successfully'
-            ]);
-
-        } catch (JWTException $exception) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Sorry, the user cannot be logged out'
-            ], 500);
-
-        }
-    }
-
-    /**
-     * user register
-     */
-    public function register(Request $request)
-    {  
-        $this->validate($request, [
-            'name' => 'required|max:255',
-            'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|min:6',
-        ]);
-
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->save();
-
-        if ($this->loginAfterSignUp) {
-            return $this->login($request);
-        }
-
-        return response()->json([
-            'success'   =>  true,
-            'data'      =>  $user
-        ], 200);
-    }
-
-    /**
-     * user detials
-    */
-    public function details (Request $request)
-    {
-        $this->validate($request, [
-            'token' => 'required'
-        ]);
- 
-        $user = JWTAuth::authenticate($request->token);
- 
-        return response()->json([
-            'success'   =>  true,
-            'user'      => $user
-        ], 200);
     }
 }

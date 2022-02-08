@@ -17,10 +17,11 @@ use Illuminate\Http\Request;
 //     return $request->user();
 // });
 
-Route::post('login', 'Api\UserController@login');
-Route::post('register', 'Api\UserController@register');
+Route::post('login', 'Api\AuthController@login');
+Route::post('register', 'Api\AuthController@register');
 
 Route::group(['middleware' => 'auth.jwt'], function () {
-    Route::get('details', 'Api\UserController@details');
-    Route::get('logout', 'Api\UserController@logout');
+    Route::get('all-user', 'Api\UserController@allUser');
+    Route::get('show', 'Api\UserController@show');
+    Route::get('logout', 'Api\AuthController@logout');
 });
