@@ -17,7 +17,6 @@ class UserController extends Controller
         $this->userRepository = $userRepository;
     }
    
-
     /**
      * get all user
     */
@@ -44,7 +43,7 @@ class UserController extends Controller
     */
     public function show (Request $request)
     {
-        $userId = $request->route('id');
+        $userId = $request->id;
 
         $user = $this->userRepository->getUserById($userId);
         
